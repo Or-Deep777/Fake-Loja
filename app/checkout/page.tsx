@@ -1,5 +1,6 @@
 "use client"
 import { useState } from "react";
+import { Frete } from "@/types/Frete"; 
 
 interface Endereco {
     cep: string
@@ -18,6 +19,8 @@ export default function checkout() {
     estado:""
   })
 
+  const [fretes,setFretes] = useState<Frete[]>([])
+
   async function buscarCep() {
     const response = await fetch(`https://viacep.com.br/ws/${endereco.cep}/json/`)
     const data = await response.json()
@@ -28,6 +31,19 @@ export default function checkout() {
       cidade: data.localidade,
       estado: data.uf
     })
+    calcularFrete(endereco.cep)
+  }
+
+  async function calcularFrete(cep:string) {
+    const response = await fetch("/api/frete",{
+      method:"POST",
+      headers: {
+        "Content-Type":"application/json"
+      },
+      body: JSON.stringify({cepDestino:cep})
+    })
+    const data = await response.json()
+    setFretes(data)
   }
 
   return (
@@ -39,6 +55,18 @@ export default function checkout() {
         <input className="border rounded p-2 w-full" type="text" placeholder="Bairro" value={endereco.bairro} onChange={(e)=>setEndereco({...endereco, bairro: e.target.value})}/>
         <input className="border rounded p-2 w-full" type="text" placeholder="Cidade" value={endereco.cidade} onChange={(e)=>setEndereco({...endereco, cidade: e.target.value})}/>
         <input className="border rounded p-2 w-full" type="text" placeholder="Estado" value={endereco.estado} onChange={(e)=>setEndereco({...endereco, estado: e.target.value})}/>
+      </div>
+      <div className="mt-4 space-y-2">
+        {fretes.length > 0 && (
+          <h2 className="font-bold">Escolha seu frete</h2>
+        )}
+        {fretes.map((frete)=>(
+          <div key={frete.id} className="border p-3 rounded">
+            <p>{frete.nome}</p>
+            <p>R${frete.preco}</p>
+            <p>{frete.delivery_tempo} dias</p>
+          </div>
+        ))}
       </div>
     </main>
   );
